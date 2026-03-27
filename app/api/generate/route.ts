@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { generateProposalContent } from '@/lib/ai'
 import { generateSlug } from '@/lib/slug'
 import { NextResponse } from 'next/server'
@@ -11,16 +12,65 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json()
-  const {
-    briefText,
-    clientName,
-    clientEmail,
-    clientCompany,
-    projectTitle,
-    totalAmount,
-    depositAmount,
-  } = body
+  const contentType = request.headers.get('content-type') || ''
+  let briefText = ''
+  let clientName = ''
+  let clientEmail = ''
+  let clientCompany = ''
+  let projectTitle = ''
+  let totalAmount = ''
+  let depositAmount = ''
+  let briefFileUrl: string | null = null
+
+  if (contentType.includes('multipart/form-data')) {
+    // 파일 업로드 포함 FormData
+    const fd = await request.formData()
+    briefText = (fd.get('briefText') as string) || ''
+    clientName = (fd.get('clientName') as string) || ''
+    clientEmail = (fd.get('clientEmail') as string) || ''
+    clientCompany = (fd.get('clientCompany') as string) || ''
+    projectTitle = (fd.get('projectTitle') as string) || ''
+    totalAmount = (fd.get('totalAmount') as string) || ''
+    depositAmount = (fd.get('depositAmount') as string) || ''
+
+    const briefFile = fd.get('briefFile') as File | null
+    if (briefFile && briefFile.size > 0) {
+      // 파일을 Supabase Storage briefs/{userId}/{timestamp}-{filename} 에 저장
+      const adminSupabase = createAdminClient()
+      const ext = briefFile.name.split('.').pop() || 'bin'
+      const filePath = `${user.id}/${Date.now()}-brief.${ext}`
+      const buffer = Buffer.from(await briefFile.arrayBuffer())
+
+      const { error: uploadError } = await adminSupabase.storage
+        .from('briefs')
+        .upload(filePath, buffer, {
+          contentType: briefFile.type || 'application/octet-stream',
+          upsert: false,
+        })
+
+      if (!uploadError) {
+        const { data: urlData } = adminSupabase.storage
+          .from('briefs')
+          .getPublicUrl(filePath)
+        briefFileUrl = urlData?.publicUrl ?? null
+
+        // txt/md 파일이면 텍스트 추출
+        if (!briefText && (briefFile.type === 'text/plain' || ['txt', 'md'].includes(ext))) {
+          briefText = Buffer.from(await briefFile.arrayBuffer()).toString('utf-8')
+        }
+      }
+    }
+  } else {
+    // JSON
+    const body = await request.json()
+    briefText = body.briefText || ''
+    clientName = body.clientName || ''
+    clientEmail = body.clientEmail || ''
+    clientCompany = body.clientCompany || ''
+    projectTitle = body.projectTitle || ''
+    totalAmount = body.totalAmount || ''
+    depositAmount = body.depositAmount || ''
+  }
 
   if (!briefText || !clientName || !clientEmail || !projectTitle) {
     return NextResponse.json(
@@ -77,7 +127,7 @@ export async function POST(request: Request) {
         client_company: clientCompany || null,
         project_title: projectTitle,
         content,
-        brief_text: briefText,
+        brief_text: briefFileUrl ? `[파일: ${briefFileUrl}]\n\n${briefText}` : briefText,
         total_amount: totalAmount ? parseFloat(totalAmount) : null,
         deposit_amount: depositAmount ? parseFloat(depositAmount) : null,
       })

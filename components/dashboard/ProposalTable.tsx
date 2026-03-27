@@ -4,13 +4,19 @@ import Link from 'next/link'
 import { Proposal } from '@/types'
 import StatusBadge from './StatusBadge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ExternalLink, MoreHorizontal, Trash2 } from 'lucide-react'
+import { ExternalLink, Trash2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
 
-export default function ProposalTable({ proposals }: { proposals: Proposal[] }) {
+export default function ProposalTable({
+  proposals,
+  viewCounts = {},
+}: {
+  proposals: Proposal[]
+  viewCounts?: Record<string, number>
+}) {
   const router = useRouter()
   const { toast } = useToast()
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -42,7 +48,10 @@ export default function ProposalTable({ proposals }: { proposals: Proposal[] }) 
               Status
             </th>
             <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-6 py-3 hidden md:table-cell">
-              Value
+              조회수
+            </th>
+            <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-6 py-3 hidden md:table-cell">
+              금액
             </th>
             <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-6 py-3 hidden lg:table-cell">
               Created
@@ -66,6 +75,12 @@ export default function ProposalTable({ proposals }: { proposals: Proposal[] }) 
               </td>
               <td className="px-6 py-4 hidden sm:table-cell">
                 <StatusBadge status={proposal.status} />
+              </td>
+              <td className="px-6 py-4 hidden md:table-cell">
+                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{viewCounts[proposal.id] || 0}</span>
+                </div>
               </td>
               <td className="px-6 py-4 hidden md:table-cell">
                 <span className="text-sm text-slate-700">

@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/lib/utils'
-import { FileText, Send, PenLine, DollarSign } from 'lucide-react'
+import { FileText, Send, PenLine, DollarSign, Eye } from 'lucide-react'
 
 interface Stats {
   total: number
@@ -7,33 +7,34 @@ interface Stats {
   signed: number
   paid: number
   totalValue: number
+  totalViews?: number
 }
 
 export default function StatsCards({ stats }: { stats: Stats }) {
   const cards = [
     {
-      label: 'Total Proposals',
+      label: '전체 제안서',
       value: stats.total,
       icon: FileText,
       color: 'text-slate-600',
       bg: 'bg-slate-100',
     },
     {
-      label: 'Sent',
-      value: stats.sent,
-      icon: Send,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
+      label: '조회수',
+      value: stats.totalViews ?? 0,
+      icon: Eye,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
     },
     {
-      label: 'Signed',
+      label: '서명 완료',
       value: stats.signed,
       icon: PenLine,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
     {
-      label: 'Revenue Collected',
+      label: '수금 완료',
       value: formatCurrency(stats.totalValue),
       icon: DollarSign,
       color: 'text-green-600',

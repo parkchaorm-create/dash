@@ -1,3 +1,5 @@
+-- ⚠️ 이 파일 실행 후 0002_proposal_views.sql 도 실행하세요
+
 -- Enable UUID extension
 create extension if not exists "pgcrypto";
 

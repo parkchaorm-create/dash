@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient()
 
-  // Verify proposal exists and is in 'sent' status
+  // Verify proposal exists
   const { data: proposal, error: proposalError } = await supabase
     .from('proposals')
     .select('id, status')
@@ -34,14 +34,37 @@ export async function POST(request: Request) {
   const ip = forwarded ? forwarded.split(',')[0] : '127.0.0.1'
   const userAgent = request.headers.get('user-agent') || ''
 
-  // Save signature
+  // 서명 이미지를 Storage에 업로드 (base64 → PNG 파일)
+  let signatureStoragePath: string | null = null
+  if (signatureData && signatureData.startsWith('data:image/png;base64,')) {
+    try {
+      const base64 = signatureData.replace('data:image/png;base64,', '')
+      const buffer = Buffer.from(base64, 'base64')
+      const filePath = `${proposalId}/signature.png`
+
+      const { error: uploadError } = await supabase.storage
+        .from('signatures')
+        .upload(filePath, buffer, {
+          contentType: 'image/png',
+          upsert: true,
+        })
+
+      if (!uploadError) {
+        signatureStoragePath = filePath
+      }
+    } catch {
+      // 업로드 실패 시 무시하고 계속 진행
+    }
+  }
+
+  // Save signature record
   const { error: sigError } = await supabase
     .from('signatures')
     .upsert({
       proposal_id: proposalId,
       signer_name: signerName,
       signer_email: signerEmail,
-      signature_data: signatureData || null,
+      signature_data: signatureStoragePath ?? signatureData ?? null,
       ip_address: ip,
       user_agent: userAgent,
       signed_at: new Date().toISOString(),
