@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/mac/Documents/dev/test1 -type f -name .* -o -type d)"
+    ]
+  }
+}
