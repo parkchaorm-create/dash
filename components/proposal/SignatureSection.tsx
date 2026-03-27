@@ -23,7 +23,8 @@ interface SignatureSectionProps {
 }
 
 export default function SignatureSection({ proposal, onSigned }: SignatureSectionProps) {
-  const sigCanvasRef = useRef<import('react-signature-canvas').default>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sigCanvasRef = useRef<any>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState(proposal.client_email || '')
   const [submitting, setSubmitting] = useState(false)
