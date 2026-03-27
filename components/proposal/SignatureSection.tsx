@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, PenLine, RotateCcw } from 'lucide-react'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SignatureCanvas = dynamic(() => import('react-signature-canvas'), {
   ssr: false,
   loading: () => (
@@ -15,7 +16,7 @@ const SignatureCanvas = dynamic(() => import('react-signature-canvas'), {
       <span className="text-slate-400 text-sm">서명 패드 로딩 중...</span>
     </div>
   ),
-})
+}) as any
 
 interface SignatureSectionProps {
   proposal: Proposal
